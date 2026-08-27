@@ -445,7 +445,7 @@ def get_knowledge_base():
     bm25_path = os.path.join(SCRIPT_DIR, "bm25_index.pkl")
     splits_path = os.path.join(SCRIPT_DIR, "splits.pkl")
     if not os.path.exists(doc_path):
-        return None, None, None, "未找到 company_rule.docx"
+        return None, None, None, "未找到 employee_handbook.docx"
     try:
         embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
         if os.path.exists(chroma_path) and os.listdir(chroma_path) and os.path.exists(bm25_path) and os.path.exists(splits_path):
@@ -455,13 +455,13 @@ def get_knowledge_base():
             return db, bm25, all_splits, {"name": "employee_handbook.docx", "chunks": len(all_splits)}
         loader = Docx2txtLoader(doc_path)
         pages = loader.load()
-        all_splits = smart_split_documents(pages, source_name="company_rule.docx")
+        all_splits = smart_split_documents(pages, source_name="employee_handbook.docx")
         if os.path.exists(chroma_path): shutil.rmtree(chroma_path, ignore_errors=True)
         db = Chroma.from_documents(all_splits, embeddings, persist_directory=chroma_path)
         bm25 = build_bm25_index(all_splits)
         with open(bm25_path, "wb") as f: pickle.dump(bm25, f)
         with open(splits_path, "wb") as f: pickle.dump(all_splits, f)
-        return db, bm25, all_splits, {"name": "company_rule.docx", "chunks": len(all_splits)}
+        return db, bm25, all_splits, {"name": "employee_handbook.docx", "chunks": len(all_splits)}
     except Exception as e:
         return None, None, None, f"知识库构建失败：{str(e)}"
 
