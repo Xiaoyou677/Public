@@ -1,0 +1,13 @@
+streamlit
+langchain
+langchain-community
+langchain-openai
+langchain-core
+langchain-text-splitters
+chromadb
+rank-bm25
+sentence-transformers
+python-docx
+docx2txt
+pypdf
+numpy
