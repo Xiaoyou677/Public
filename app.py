@@ -979,22 +979,38 @@ with tab4:
     if bad_cases:
         categories = {"检索不到":0, "检索不准":0, "模型幻觉":0, "回答不完整":0,
                       "回答格式问题":0, "响应太慢":0, "上下文理解错误":0,
-                      "查询改写错误":0, "切片问题":0, "引用来源错误":0}
-        for f in feedback:
-            if f["type"] == "downvote":
-                bad_type = f.get("bad_case_type", "其他")
-                if bad_type in categories:
-                    categories[bad_type] += 1
+                      "查询改写错误":0, "切片问题":0, "引用来源错误":0, "其他":0}
+        # 从bad_cases中统计（而不是从feedback中统计）
+        for case in bad_cases:
+            bad_type = case.get("bad_type", "")
+            if bad_type and bad_type in categories:
+                categories[bad_type] += 1
+            else:
+                # 如果没有bad_type字段，根据回答内容自动判断分类
+                answer = case.get("answer", "")
+                response_time = case.get("response_time", 0)
+                if response_time > 10:
+                    categories["响应太慢"] += 1
+                elif "无法回答" in answer or "暂无相关规定" in answer or "没有相关信息" in answer:
+                    categories["检索不到"] += 1
+                elif len(answer) < 50:
+                    categories["回答不完整"] += 1
+                elif "幻觉" in answer or "编造" in answer or "瞎编" in answer:
+                    categories["模型幻觉"] += 1
                 else:
-                    text = f.get("text","")
-                    if any(k in text for k in ["找不到","没有","检索"]): categories["检索不到"] += 1
-                    elif any(k in text for k in ["不准","不对","相关"]): categories["检索不准"] += 1
-                    elif any(k in text for k in ["幻觉","编造","瞎编"]): categories["模型幻觉"] += 1
-                    elif any(k in text for k in ["不完整","太短","不全"]): categories["回答不完整"] += 1
-                    else: categories["其他"] = categories.get("其他",0) + 1
+                    categories["其他"] += 1
+        
+        # 显示分类统计（用进度条更直观）
+        total_bad = len(bad_cases)
         for cat, count in categories.items():
             if count > 0:
-                st.write(f"- **{cat}**：{count} 个")
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.progress(count / total_bad)
+                with col2:
+                    st.write(f"**{cat}**")
+                with col3:
+                    st.write(f"{count}个 ({round(count/total_bad*100,1)}%)")
     else:
         st.info("暂无统计数据。")
 
