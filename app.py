@@ -1,5 +1,6 @@
 import os
 # 国内运行时取消下面注释可加速下载；部署到Streamlit Cloud（国外服务器）必须注释掉
+# import os
 # os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 import streamlit as st

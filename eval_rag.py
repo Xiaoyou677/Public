@@ -9,6 +9,10 @@ import json
 import re
 from datetime import datetime
 
+# 配置HuggingFace国内镜像源（解决国内下载模型失败的问题）
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "0"
+
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -329,11 +333,11 @@ def main():
     # 3. 跑评测
     print(f"\n[3/5] 开始评测，共 {len(EVAL_DATASET)} 道题...")
     results = []
-    # 只跑前10道题，加快评测速度（完整评测集有100道题）
-    for i, eval_item in enumerate(EVAL_DATASET[:10]):
+    # 跑100道题，生成完整评测数据（完整评测集有100道题）
+    for i, eval_item in enumerate(EVAL_DATASET[:100]):
         question = eval_item["question"]
         category = eval_item["category"]
-        print(f"  [{i+1}/10] {question}")
+        print(f"  [{i+1}/100] {question}")
         
         result = answer_question(question, db, bm25, all_splits, embeddings, llm)
         result["category"] = category
