@@ -685,7 +685,56 @@ with tab1:
 # ==================== Tab2: 效果评估 ====================
 with tab2:
     st.title("📊 效果评估仪表盘")
-    st.caption("实时监控系统效果指标")
+    st.caption("实时监控系统效果指标 + 历史评测结果")
+    
+    # ========== 历史评测结果（自动读取eval_result_*.json文件）==========
+    import glob
+    eval_files = sorted(glob.glob(os.path.join(SCRIPT_DIR, "eval_result_*.json")), reverse=True)
+    if eval_files:
+        with open(eval_files[0], "r", encoding="utf-8") as f:
+            eval_result = json.load(f)
+        metrics = eval_result.get("metrics", {})
+        st.success(f"✅ 已加载历史评测结果：{os.path.basename(eval_files[0])}（{metrics.get('total_questions', 'N/A')}道题）")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("🎯 检索命中率", f"{metrics.get('retrieval_hit_rate', 'N/A')}%", 
+                     help="混合检索（BM25+向量）+ Rerank重排后的检索准确率")
+        with col2:
+            st.metric("✅ 回答准确率", f"{metrics.get('answer_accuracy', 'N/A')}%", 
+                     help="基于标准答案对比的回答准确率")
+        with col3:
+            st.metric("🚨 幻觉率", f"{metrics.get('hallucination_rate', 'N/A')}%", 
+                     help="回答中包含编造信息的比例")
+        with col4:
+            st.metric("⏱️ 平均响应时长", f"{metrics.get('avg_response_time', 'N/A')}秒", 
+                     help="从提问到回答完成的平均时间")
+        
+        # 展示评测详情
+        with st.expander("📋 查看评测详情", expanded=False):
+            st.write(f"**评测时间**：{eval_result.get('eval_time', 'N/A')}")
+            st.write(f"**评测题目数**：{metrics.get('total_questions', 'N/A')}道")
+            st.write(f"**检索命中数**：{metrics.get('hit_count', 'N/A')}道")
+            st.write(f"**回答正确数**：{metrics.get('answer_hit_count', 'N/A')}道")
+            st.write(f"**幻觉数**：{metrics.get('hallucination_count', 'N/A')}道")
+            st.write(f"**使用模型**：{eval_result.get('model', 'N/A')}")
+            st.write(f"**嵌入模型**：{eval_result.get('embedding_model', 'N/A')}")
+            
+            # 如果有详细结果，展示前5道题
+            if "results" in eval_result and eval_result["results"]:
+                st.divider()
+                st.subheader("📝 前5道题评测结果")
+                for i, r in enumerate(eval_result["results"][:5]):
+                    with st.expander(f"[{i+1}] {r.get('question', '')[:50]}..."):
+                        st.write(f"**类别**：{r.get('category', 'N/A')}")
+                        st.write(f"**响应时长**：{r.get('response_time', 'N/A')}秒")
+                        st.write(f"**检索文档数**：{r.get('retrieved_docs', 'N/A')}")
+                        st.write(f"**AI回答**：{r.get('answer', '')[:200]}...")
+        
+        st.divider()
+    
+    # ========== 实时统计数据（用户问答和反馈）==========
+    st.subheader("📈 实时用户反馈统计")
     feedback = load_json(FEEDBACK_FILE, [])
     qa_logs = load_json(QA_LOG_FILE, [])
     total_qa = len(qa_logs)
